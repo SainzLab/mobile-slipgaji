@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../constants/app_colors.dart';
 import '../data/salary_data.dart';
 
@@ -32,8 +35,111 @@ class HistoryDetailSheet extends StatelessWidget {
         val(data['tpp'], 'potongan_bpjs_kes');
 
     final netTppSipd = tppIncome - potTppSipd;
-    final grandTotalSipd = netGajiSipd + netTppSipd; 
     final thpFinal = val(data['summary'], 'thp_total');
+
+    Future<void> generatePdf() async {
+      final pdf = pw.Document();
+
+      final fontStyle = pw.TextStyle(fontSize: 10);
+      final titleStyle = pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold);
+      final headerStyle = pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold);
+
+      pw.Widget buildPdfRow(String label, int value, {bool isBold = false}) {
+        return pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 2),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(label, style: isBold ? titleStyle : fontStyle),
+              pw.Text(SalaryData.formatRupiah(value), style: isBold ? titleStyle : fontStyle),
+            ],
+          ),
+        );
+      }
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                
+                pw.Center(child: pw.Text("SLIP GAJI & TPP", style: headerStyle)),
+                pw.Center(child: pw.Text("Periode: ${data['month']}", style: fontStyle)),
+                pw.SizedBox(height: 20),
+                pw.Divider(),
+
+                pw.Text("I. RINCIAN GAJI", style: titleStyle),
+                pw.SizedBox(height: 5),
+                buildPdfRow("Gaji Pokok", val(data['gaji'], 'pokok')),
+                buildPdfRow("Tunjangan Keluarga", val(data['gaji'], 'tunj_keluarga')),
+                buildPdfRow("Tunjangan Jabatan", val(data['gaji'], 'tunj_jabatan')),
+                buildPdfRow("Tunjangan Fungsional", val(data['gaji'], 'tunj_fungsional')),
+                buildPdfRow("Tunjangan Beras", val(data['gaji'], 'tunj_beras')),
+                buildPdfRow("Pembulatan", val(data['gaji'], 'pembulatan')),
+                pw.Divider(thickness: 0.5),
+                buildPdfRow("TOTAL GAJI KOTOR", gajiIncome, isBold: true),
+                pw.SizedBox(height: 10),
+                pw.Text("Potongan Gaji:", style: fontStyle),
+                buildPdfRow("Potongan IWP", val(data['gaji'], 'potongan_iwp')),
+                buildPdfRow("Potongan BPJS", val(data['gaji'], 'potongan_bpjs_kes')),
+                buildPdfRow("Potongan Lainnya", potGajiSipd - val(data['gaji'], 'potongan_iwp') - val(data['gaji'], 'potongan_bpjs_kes')),
+                pw.Divider(thickness: 0.5),
+                buildPdfRow("TOTAL POTONGAN GAJI", potGajiSipd, isBold: true),
+                pw.SizedBox(height: 5),
+                pw.Container(
+                  color: PdfColors.blue50,
+                  padding: const pw.EdgeInsets.all(5),
+                  child: buildPdfRow("GAJI BERSIH", netGajiSipd, isBold: true),
+                ),
+
+                pw.SizedBox(height: 20),
+
+                pw.Text("II. RINCIAN TPP", style: titleStyle),
+                pw.SizedBox(height: 5),
+                buildPdfRow("Beban Kerja", val(data['tpp'], 'beban_kerja')),
+                buildPdfRow("Kondisi Kerja", val(data['tpp'], 'kondisi_kerja')),
+                buildPdfRow("Prestasi Kerja", val(data['tpp'], 'prestasi_kerja')),
+                pw.Divider(thickness: 0.5),
+                buildPdfRow("TOTAL TPP KOTOR", tppIncome, isBold: true),
+                pw.SizedBox(height: 10),
+                pw.Text("Potongan TPP:", style: fontStyle),
+                buildPdfRow("Potongan PPh 21", val(data['tpp'], 'potongan_pph21')),
+                buildPdfRow("Potongan IWP", val(data['tpp'], 'potongan_iwp')),
+                buildPdfRow("Potongan BPJS", val(data['tpp'], 'potongan_bpjs_kes')),
+                pw.Divider(thickness: 0.5),
+                buildPdfRow("TOTAL POTONGAN TPP", potTppSipd, isBold: true),
+                pw.SizedBox(height: 5),
+                pw.Container(
+                  color: PdfColors.green50,
+                  padding: const pw.EdgeInsets.all(5),
+                  child: buildPdfRow("TPP BERSIH", netTppSipd, isBold: true),
+                ),
+
+                pw.SizedBox(height: 30),
+                pw.Divider(thickness: 2),
+                pw.SizedBox(height: 10),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text("TOTAL DITERIMA (NET)", style: headerStyle),
+                    pw.Text(SalaryData.formatRupiah(thpFinal), style: headerStyle),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
+                pw.Center(child: pw.Text("* Dokumen ini di-generate otomatis oleh SiGaji", style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey))),
+              ],
+            );
+          },
+        ),
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: 'SlipGaji-${data['month']}',
+      );
+    }
 
     return Container(
       decoration: const BoxDecoration(
@@ -43,6 +149,7 @@ class HistoryDetailSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min, 
         children: [
+          
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 12, bottom: 8),
@@ -63,10 +170,21 @@ class HistoryDetailSheet extends StatelessWidget {
                     Text(data['month'] ?? "Detail Gaji", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.dark)),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                  child: Text(SalaryData.formatRupiah(thpFinal), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: generatePdf, 
+                      icon: const Icon(Icons.print_rounded, color: AppColors.primary),
+                      tooltip: "Cetak / Simpan PDF",
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                      child: Text(SalaryData.formatRupiah(thpFinal), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ],
                 )
               ],
             ),

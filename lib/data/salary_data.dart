@@ -1,20 +1,17 @@
 import 'package:intl/intl.dart';
 
 class SalaryData {
-  // --- DATA UTAMA (REAL DATA: JANUARI 2026) ---
+  
   static Map<String, dynamic> data = {
     "periode": "Januari 2026",
     "pegawai": {
       "nama": "FATHURRACHMAN ABDUL MALIK",
       "nip": "19970311 202012 1 004",
       "jabatan": "PRANATA KOMPUTER PERTAMA",
-      "unit": "Dinas Komunikasi dan Informatika" // Asumsi unit kerja
+      "unit": "Dinas Komunikasi dan Informatika" 
     },
     
-    // --- RINCIAN GAJI (SIPD) ---
-    // Sumber: SIPD - Data Pegawai Gaji.xlsx
     "gaji": {
-      // PENDAPATAN
       "pokok": 2964000,
       "tunj_keluarga": 355680,
       "tunj_jabatan": 0,
@@ -28,61 +25,42 @@ class SalaryData {
       "tunj_jkm": 21341,
       "tunj_tapera": 0,
       
-      // Khusus di file SIPD Gaji, kolom JHT ada di area tunjangan tapi
-      // secara perhitungan matematika dia pengurang (potongan).
-      // Kita masukkan ke pendapatan untuk balancing jika di slip gaji asli muncul sebagai tunjangan dulu.
-      // Namun untuk perhitungan bersih, ia akan dipotong di bawah.
       "tunj_jht": 265574, 
       
-      // POTONGAN SIPD
       "potongan_iwp": 38597,
       "potongan_pph21": 0,
       "potongan_bpjs_kes": 154387,
       "potongan_jkk": 7114,
       "potongan_jkm": 21341,
-      "potongan_jht": 265574, // JHT/Tapera dari file Gaji
+      "potongan_jht": 265574,
       "potongan_tapera": 0,
       "potongan_bulog": 0,
       "potongan_zakat": 0,
 
-      // TOTAL SIPD (Gross)
-      // 2.964.000 + 355.680 + 540.000 + 217.260 + 31 + 154.387 + 7.114 + 21.341 + 265.574 = 4.259.813
       "jumlah_kotor": 4259813,
       
-      // Total Potongan SIPD
-      // 38.597 + 154.387 + 7.114 + 21.341 + 265.574 = 487.013
       "potongan_sipd": 487013, 
     },
 
-    // --- RINCIAN TPP (SIPD) ---
-    // Sumber: SIPD - Data Pegawai TPP.xlsx
     "tpp": {
-      // PENDAPATAN
       "beban_kerja": 773934,
       "kondisi_kerja": 1382589,
       "prestasi_kerja": 1160901,
       "kelangkaan_profesi": 0,
-      "tunj_bpjs_kes": 132697, // Muncul sebagai tunjangan di TPP
+      "tunj_bpjs_kes": 132697,
       "tunj_pph": 0,
 
-      // POTONGAN SIPD
       "potongan_iwp": 33174,
       "potongan_pph21": 75772,
-      "potongan_bpjs_kes": 132697, // Potongan BPJS TPP
+      "potongan_bpjs_kes": 132697,
       "potongan_zakat": 0,
       "potongan_bulog": 0,
 
-      // TOTAL SIPD
-      // 773.934 + 1.382.589 + 1.160.901 + 132.697 = 3.450.121
       "jumlah_kotor": 3450121,
       
-      // Total Potongan SIPD
-      // 33.174 + 75.772 + 132.697 = 241.643
       "potongan_sipd": 241643, 
     },
 
-    // --- POTONGAN EKSTERNAL (MANUAL DARI EXCEL POTONGAN) ---
-    // Sumber: Potongan Gaji PNS JAN 2026.csv
     "potongan_eksternal": {
       "gaji": {
         "koperasi": 0,
@@ -90,13 +68,13 @@ class SalaryData {
         "dharma_wanita": 15000,
         "bjb": 0,
         "bjb_syariah": 0,
-        "zakat_fitrah": 20000, // Zakat Fitrah + Infak
+        "zakat_fitrah": 20000,
         "bri": 0,
-        "zakat": 0, // Zakat Mal
+        "zakat": 0,
         "bsm": 0,
-        "total": 40000 // 5.000 + 15.000 + 20.000
+        "total": 40000 
       },
-      // Sumber: Potongan TPP.xlsx (Row 37 FATHURRACHMAN)
+      
       "tpp": {
         "bjb": 0,
         "gotroy": 0,
