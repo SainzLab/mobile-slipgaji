@@ -87,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             child: Column(
               children: [
                 Text(
-                  "Versi 1.0.0",
+                  "v1.0",
                   style: TextStyle(
                     color: Colors.grey,
                     fontSize: 12,

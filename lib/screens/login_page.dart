@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import 'main_screen.dart';
 import 'forgot_password_page.dart';
+import '../services/api_service.dart'; 
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,7 +14,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   final _nipController = TextEditingController(text: "199703112020121004");
-  final _passController = TextEditingController(text: "admin");
+  final _passController = TextEditingController(text: "password123");
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -52,12 +53,26 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   void _login() async {
     setState(() => _isLoading = true);
     
-    await Future.delayed(const Duration(seconds: 1)); 
+    final auth = ApiService();
+    final user = await auth.login(_nipController.text, _passController.text);
+
     if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      setState(() => _isLoading = false);
+      
+      if (user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("NIP atau Password salah"),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -230,7 +245,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                         
                         const Center(
                           child: Text(
-                            "v1.0.0",
+                            "v1.0",
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ),

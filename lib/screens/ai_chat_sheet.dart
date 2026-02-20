@@ -16,7 +16,7 @@ class _AiChatSheetState extends State<AiChatSheet> {
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
 
-  static const String _apiKey = 'AIzaSyDEFV40q0XZFdhBimPFtZXspsAz_5xcRW8'; 
+  static const String _apiKey = 'AIzaSyA-Vm7OYK8N1w4jTQyessYqoYwzkUnRZ40'; 
 
   late final GenerativeModel _model;
   late final ChatSession _chatSession;

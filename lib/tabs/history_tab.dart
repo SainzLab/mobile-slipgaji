@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; 
 import '../constants/app_colors.dart';
-import '../data/salary_data.dart';
 import '../screens/history_detail_sheet.dart';
+import '../services/api_service.dart';
+import '../models/gaji_model.dart';
+import '../models/tpp_model.dart';
 
 class HistoryTab extends StatefulWidget {
   const HistoryTab({super.key});
@@ -11,17 +15,74 @@ class HistoryTab extends StatefulWidget {
 }
 
 class _HistoryTabState extends State<HistoryTab> {
-  
   List<Map<String, dynamic>> _allHistory = [];
   List<Map<String, dynamic>> _filteredHistory = [];
+  bool _isLoading = true;
+  String _errorMessage = "";
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _fetchHistoryData();
+  }
 
-    _allHistory = SalaryData.salaryHistory;
-    _filteredHistory = _allHistory;
+  Future<void> _fetchHistoryData() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = "";
+    });
+
+    final api = ApiService();
+
+    try {
+      await initializeDateFormatting('id_ID', null);
+
+      final results = await Future.wait([
+        api.getGajiHistory(),
+        api.getTppHistory(),
+      ]);
+
+      final listGaji = results[0] as List<Gaji>;
+      final listTpp = results[1] as List<Tpp>;
+
+      List<Map<String, dynamic>> tempHistory = [];
+
+      for (int i = 0; i < listGaji.length; i++) {
+        final gaji = listGaji[i];
+        final tpp = (i < listTpp.length) ? listTpp[i] : null;
+        final int totalThp = (gaji.jumlahDiterima) + (tpp?.jumlahDiterima ?? 0);
+
+        DateTime date = DateTime(2026, 2 - i, 1); 
+        String monthName = DateFormat('MMMM yyyy', 'id_ID').format(date);
+
+        tempHistory.add({
+          'month': monthName, 
+          'total': totalThp,
+          'status': 'Ditransfer',
+          'gaji_data': gaji,
+          'tpp_data': tpp,
+        });
+      }
+
+      if (mounted) {
+        setState(() {
+          _allHistory = tempHistory;
+          _filteredHistory = tempHistory;
+          _isLoading = false;
+        });
+      }
+
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Gagal memuat data: $e";
+        });
+      }
+    }
   }
 
   void _runFilter(String enteredKeyword) {
@@ -42,11 +103,12 @@ class _HistoryTabState extends State<HistoryTab> {
   }
 
   Future<void> _handleRefresh() async {
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _searchController.clear();
-      _filteredHistory = _allHistory; 
-    });
+    _searchController.clear();
+    await _fetchHistoryData();
+  }
+
+  String formatRupiah(num number) {
+    return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(number);
   }
 
   @override
@@ -59,6 +121,7 @@ class _HistoryTabState extends State<HistoryTab> {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: AppColors.dark,
+        surfaceTintColor: Colors.transparent,
       ),
       body: Column(
         children: [
@@ -69,7 +132,7 @@ class _HistoryTabState extends State<HistoryTab> {
               controller: _searchController,
               onChanged: (value) => _runFilter(value),
               decoration: InputDecoration(
-                hintText: 'Cari bulan',
+                hintText: 'Cari bulan (misal: Januari)',
                 hintStyle: TextStyle(color: Colors.grey.shade400),
                 prefixIcon: const Icon(Icons.search, color: AppColors.primary),
                 suffixIcon: _searchController.text.isNotEmpty
@@ -84,18 +147,9 @@ class _HistoryTabState extends State<HistoryTab> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 filled: true,
                 fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1)),
               ),
             ),
           ),
@@ -105,129 +159,106 @@ class _HistoryTabState extends State<HistoryTab> {
               onRefresh: _handleRefresh,
               color: AppColors.primary,
               backgroundColor: Colors.white,
-              child: _filteredHistory.isNotEmpty
-                  ? ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _filteredHistory.length,
-                      itemBuilder: (context, index) {
-                        final item = _filteredHistory[index];
-                        final month = item['month'] as String;
-                        final thp = item['take_home_pay'] as int;
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage.isNotEmpty
+                      ? Center(child: Text(_errorMessage))
+                      : _filteredHistory.isNotEmpty
+                          ? ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _filteredHistory.length,
+                              itemBuilder: (context, index) {
+                                final item = _filteredHistory[index];
+                                final month = item['month'] as String;
+                                final thp = item['total'] as int;
+                                final status = item['status'] as String;
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey.shade200),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.shade100,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => DraggableScrollableSheet(
-                                    initialChildSize: 0.85,
-                                    minChildSize: 0.5,
-                                    maxChildSize: 0.95,
-                                    builder: (_, controller) =>
-                                        HistoryDetailSheet(data: item),
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                    boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 4, offset: const Offset(0, 2))],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) => HistoryDetailSheet(
+                                            month: month,
+                                            gaji: item['gaji_data'],
+                                            tpp: item['tpp_data'],
+                                          ),
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primary.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const Icon(Icons.calendar_month, color: AppColors.primary),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(month, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                                  const SizedBox(height: 4),
+                                                  Row(
+                                                    children: [
+                                                      const Icon(Icons.check_circle, size: 12, color: Colors.green),
+                                                      const SizedBox(width: 4),
+                                                      Text(status, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                Text(formatRupiah(thp), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.dark)),
+                                                const SizedBox(height: 4),
+                                                const Text("Lihat Detail >", style: TextStyle(fontSize: 11, color: AppColors.primary)),
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 );
                               },
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Icon(Icons.calendar_month,
-                                          color: AppColors.primary),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(month,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 15)),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.check_circle,
-                                                  size: 12,
-                                                  color: AppColors.secondary),
-                                              const SizedBox(width: 4),
-                                              const Text("Ditransfer",
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(SalaryData.formatRupiah(thp),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                                color: AppColors.dark)),
-                                        const SizedBox(height: 4),
-                                        const Text("Lihat Detail >",
-                                            style: TextStyle(
-                                                fontSize: 11,
-                                                color: AppColors.primary)),
-                                      ],
-                                    )
-                                  ],
+                            )
+                          : ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.search_off, size: 64, color: Colors.grey.shade300),
+                                      const SizedBox(height: 16),
+                                      Text("Bulan tidak ditemukan", style: TextStyle(color: Colors.grey.shade500)),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ),
-                        );
-                      },
-                    )
-                  : ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.search_off,
-                                  size: 64, color: Colors.grey.shade300),
-                              const SizedBox(height: 16),
-                              Text(
-                                "Bulan tidak ditemukan",
-                                style: TextStyle(color: Colors.grey.shade500),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
             ),
           ),
         ],
