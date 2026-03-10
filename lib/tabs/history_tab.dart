@@ -6,6 +6,8 @@ import '../screens/history_detail_sheet.dart';
 import '../services/api_service.dart';
 import '../models/gaji_model.dart';
 import '../models/tpp_model.dart';
+import '../models/potongan_tpp_model.dart';
+import '../models/potongan_gaji_model.dart';
 
 class HistoryTab extends StatefulWidget {
   const HistoryTab({super.key});
@@ -43,20 +45,30 @@ class _HistoryTabState extends State<HistoryTab> {
       final results = await Future.wait([
         api.getGajiHistory(),
         api.getTppHistory(),
+        api.getPotonganGajiHistory(), 
+        api.getPotonganTppHistory(), 
       ]);
 
       final listGaji = results[0] as List<Gaji>;
       final listTpp = results[1] as List<Tpp>;
+      final listPotGaji = results[2] as List<PotonganGaji>; 
+      final listPotTpp = results[3] as List<PotonganTpp>;   
 
       List<Map<String, dynamic>> tempHistory = [];
 
       for (int i = 0; i < listGaji.length; i++) {
         final gaji = listGaji[i];
         final tpp = (i < listTpp.length) ? listTpp[i] : null;
-        final int totalThp = (gaji.jumlahDiterima) + (tpp?.jumlahDiterima ?? 0);
+        final potGaji = (i < listPotGaji.length) ? listPotGaji[i] : null; 
+        final potTpp = (i < listPotTpp.length) ? listPotTpp[i] : null;   
 
-        DateTime date = DateTime(2026, 2 - i, 1); 
-        String monthName = DateFormat('MMMM yyyy', 'id_ID').format(date);
+        final int thpGaji = potGaji != null ? potGaji.jumlahYgDiterima : gaji.jumlahDiterima;
+        final int thpTpp = potTpp != null ? potTpp.sisaTpp : (tpp?.jumlahDiterima ?? 0);
+        final int totalThp = thpGaji + thpTpp;
+
+        String namaBulan = potGaji?.bulan ?? potTpp?.bulan ?? "Bulan Tidak Diketahui";
+        String tahun = potGaji?.tahun ?? potTpp?.tahun ?? "";
+        String monthName = "$namaBulan $tahun".trim();
 
         tempHistory.add({
           'month': monthName, 
@@ -64,6 +76,8 @@ class _HistoryTabState extends State<HistoryTab> {
           'status': 'Ditransfer',
           'gaji_data': gaji,
           'tpp_data': tpp,
+          'pot_gaji_data': potGaji, 
+          'pot_tpp_data': potTpp,   
         });
       }
 
@@ -195,6 +209,8 @@ class _HistoryTabState extends State<HistoryTab> {
                                             month: month,
                                             gaji: item['gaji_data'],
                                             tpp: item['tpp_data'],
+                                            potonganGaji: item['pot_gaji_data'], 
+                                            potonganTpp: item['pot_tpp_data'],
                                           ),
                                         );
                                       },

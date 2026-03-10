@@ -5,31 +5,41 @@ import 'package:printing/printing.dart';
 import '../constants/app_colors.dart';
 import '../models/gaji_model.dart';
 import '../models/tpp_model.dart';
+import '../models/potongan_gaji_model.dart'; 
+import '../models/potongan_tpp_model.dart';  
 
 class HistoryDetailSheet extends StatelessWidget {
   final String month;
   final Gaji? gaji;
   final Tpp? tpp;
+  final PotonganGaji? potonganGaji;
+  final PotonganTpp? potonganTpp;  
 
   const HistoryDetailSheet({
     super.key, 
     required this.month, 
     required this.gaji, 
-    required this.tpp
+    required this.tpp,
+    this.potonganGaji,
+    this.potonganTpp,
   });
 
   @override
   Widget build(BuildContext context) {
-    final int thpFinal = (gaji?.jumlahDiterima ?? 0) + (tpp?.jumlahDiterima ?? 0);
+    final int thpGaji = potonganGaji != null ? potonganGaji!.jumlahYgDiterima : (gaji?.jumlahDiterima ?? 0);
+    final int thpTpp = potonganTpp != null ? potonganTpp!.sisaTpp : (tpp?.jumlahDiterima ?? 0);
+    final int thpFinal = thpGaji + thpTpp;
     
     final int gajiIncome = gaji?.jumlahKotor ?? 0;
     final int tppIncome = tpp?.jumlahKotor ?? 0;
 
-    final int potGaji = gaji?.jumlahPotongan ?? 0;
-    final int potTpp = tpp?.jumlahPotongan ?? 0;
+    final int potGajiAwal = gaji?.jumlahPotongan ?? 0;
+    final int potGajiPihak3 = potonganGaji?.jumlahPotongan ?? 0;
+    final int totalPotGaji = potGajiAwal + potGajiPihak3;
 
-    final int netGaji = gaji?.jumlahDiterima ?? 0;
-    final int netTpp = tpp?.jumlahDiterima ?? 0;
+    final int potTppAwal = tpp?.jumlahPotongan ?? 0;
+    final int potTppPihak3 = potonganTpp?.jumlahPotongan ?? 0;
+    final int totalPotTpp = potTppAwal + potTppPihak3;
 
     Future<void> generatePdf() async {
       final pdf = pw.Document();
@@ -52,12 +62,10 @@ class HistoryDetailSheet extends StatelessWidget {
       }
 
       pdf.addPage(
-        pw.Page(
+        pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
+            return [
                 pw.Center(child: pw.Text("SLIP GAJI & TPP", style: headerStyle)),
                 pw.Center(child: pw.Text("Periode: $month", style: fontStyle)),
                 pw.SizedBox(height: 15),
@@ -85,7 +93,7 @@ class HistoryDetailSheet extends StatelessWidget {
                   
                   pw.SizedBox(height: 8),
                   
-                  pw.Text("Potongan Gaji:", style: fontStyle),
+                  pw.Text("Potongan Gaji (SIPD):", style: fontStyle),
                   buildPdfRow("Potongan IWP", gaji!.potonganIwp),
                   buildPdfRow("Potongan PPh", gaji!.potonganPph),
                   buildPdfRow("BPJS Kesehatan", gaji!.iuranBpjs),
@@ -93,13 +101,26 @@ class HistoryDetailSheet extends StatelessWidget {
                   buildPdfRow("Pensiun", gaji!.iuranPensiun),
                   buildPdfRow("Zakat", gaji!.zakat),
                   buildPdfRow("Bulog", gaji!.bulog),
+
+                  if (potonganGaji != null) ...[
+                    pw.SizedBox(height: 5),
+                    pw.Text("Potongan Pihak Ke-3 (Bank/Koperasi):", style: fontStyle),
+                    buildPdfRow("Koperasi", potonganGaji!.koperasi),
+                    buildPdfRow("KORPRI", potonganGaji!.korpri),
+                    buildPdfRow("Dharma Wanita", potonganGaji!.dharmaWanita),
+                    buildPdfRow("BJB", potonganGaji!.bjb),
+                    buildPdfRow("BJB Syariah", potonganGaji!.bjbs),
+                    buildPdfRow("Zakat Fitrah/Infak", potonganGaji!.zakatFitrahInfak),
+                    buildPdfRow("Zakat Profesi", potonganGaji!.zakatProfesi),
+                  ],
+
                   pw.Divider(thickness: 0.5),
-                  buildPdfRow("TOTAL POTONGAN GAJI", potGaji, isBold: true),
+                  buildPdfRow("TOTAL POTONGAN GAJI", totalPotGaji, isBold: true),
                   pw.SizedBox(height: 5),
                   pw.Container(
                     color: PdfColors.blue50,
                     padding: const pw.EdgeInsets.all(5),
-                    child: buildPdfRow("GAJI BERSIH", netGaji, isBold: true),
+                    child: buildPdfRow("GAJI BERSIH (DITERIMA)", thpGaji, isBold: true),
                   ),
                 ],
 
@@ -120,7 +141,7 @@ class HistoryDetailSheet extends StatelessWidget {
                   
                   pw.SizedBox(height: 8),
                   
-                  pw.Text("Potongan TPP:", style: fontStyle),
+                  pw.Text("Potongan TPP (SIPD):", style: fontStyle),
                   buildPdfRow("PPh 21 (TPP)", tpp!.potonganPph),
                   buildPdfRow("IWP (TPP)", tpp!.potonganIwp),
                   buildPdfRow("BPJS Kesehatan (TPP)", tpp!.iuranBpjs),
@@ -128,17 +149,28 @@ class HistoryDetailSheet extends StatelessWidget {
                   buildPdfRow("Pensiun (TPP)", tpp!.iuranPensiun),
                   buildPdfRow("Zakat (TPP)", tpp!.zakat),
                   buildPdfRow("Bulog (TPP)", tpp!.bulog),
+
+                  if (potonganTpp != null) ...[
+                    pw.SizedBox(height: 5),
+                    pw.Text("Potongan Pihak Ke-3 (Bank/Koperasi):", style: fontStyle),
+                    buildPdfRow("Bank BJB", potonganTpp!.bjb),
+                    buildPdfRow("Gotroy", potonganTpp!.gotroy),
+                    buildPdfRow("BPR Otista", potonganTpp!.bprOtista),
+                    buildPdfRow("BPR Pasar", potonganTpp!.bprPasar),
+                    buildPdfRow("Bendahara", potonganTpp!.bendahara),
+                  ],
+
                   pw.Divider(thickness: 0.5),
-                  buildPdfRow("TOTAL POTONGAN TPP", potTpp, isBold: true),
+                  buildPdfRow("TOTAL POTONGAN TPP", totalPotTpp, isBold: true),
                   pw.SizedBox(height: 5),
                   pw.Container(
                     color: PdfColors.green50,
                     padding: const pw.EdgeInsets.all(5),
-                    child: buildPdfRow("TPP BERSIH", netTpp, isBold: true),
+                    child: buildPdfRow("TPP BERSIH (DITERIMA)", thpTpp, isBold: true),
                   ),
                 ],
 
-                pw.SizedBox(height: 20),
+                pw.SizedBox(height: 30),
                 pw.Divider(thickness: 2),
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -149,8 +181,7 @@ class HistoryDetailSheet extends StatelessWidget {
                 ),
                 pw.SizedBox(height: 20),
                 pw.Center(child: pw.Text("* Dokumen ini valid dan dicetak melalui aplikasi SiGaji", style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey))),
-              ],
-            );
+            ];
           },
         ),
       );
@@ -243,7 +274,7 @@ class HistoryDetailSheet extends StatelessWidget {
                         
                         const SizedBox(height: 16),
                         
-                        _buildRowHeader("Potongan"),
+                        _buildRowHeader("Potongan SIPD"),
                         _buildRow("Potongan IWP (10%)", gaji!.potonganIwp),
                         _buildRow("Potongan PPh", gaji!.potonganPph),
                         _buildRow("BPJS Kesehatan", gaji!.iuranBpjs),
@@ -251,14 +282,27 @@ class HistoryDetailSheet extends StatelessWidget {
                         _buildRow("Pensiun", gaji!.iuranPensiun),
                         _buildRow("Zakat", gaji!.zakat),
                         _buildRow("Bulog", gaji!.bulog),
+                        
+                        if (potonganGaji != null) ...[
+                          const SizedBox(height: 16),
+                          _buildRowHeader("Potongan Pihak Ke-3"),
+                          _buildRow("Koperasi", potonganGaji!.koperasi),
+                          _buildRow("KORPRI", potonganGaji!.korpri),
+                          _buildRow("Dharma Wanita", potonganGaji!.dharmaWanita),
+                          _buildRow("BJB", potonganGaji!.bjb),
+                          _buildRow("BJB Syariah", potonganGaji!.bjbs),
+                          _buildRow("Zakat Fitrah/Infak", potonganGaji!.zakatFitrahInfak),
+                          _buildRow("Zakat Profesi", potonganGaji!.zakatProfesi),
+                        ],
+
                         _buildDivider(),
-                        _buildRow("Jumlah Potongan", potGaji, isBold: true, valueColor: AppColors.danger),
+                        _buildRow("Jumlah Potongan Gaji", totalPotGaji, isBold: true, valueColor: AppColors.danger),
                         
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
-                          child: _buildRow("Gaji Bersih", netGaji, isBold: true, valueColor: AppColors.primary),
+                          child: _buildRow("Gaji Bersih", thpGaji, isBold: true, valueColor: AppColors.primary),
                         )
                       ],
                     ),
@@ -287,7 +331,7 @@ class HistoryDetailSheet extends StatelessWidget {
 
                         const SizedBox(height: 16),
 
-                        _buildRowHeader("Potongan"),
+                        _buildRowHeader("Potongan SIPD"),
                         _buildRow("PPh 21 (TPP)", tpp!.potonganPph),
                         _buildRow("IWP (TPP)", tpp!.potonganIwp),
                         _buildRow("BPJS Kesehatan (TPP)", tpp!.iuranBpjs),
@@ -295,14 +339,25 @@ class HistoryDetailSheet extends StatelessWidget {
                         _buildRow("Pensiun (TPP)", tpp!.iuranPensiun),
                         _buildRow("Zakat (TPP)", tpp!.zakat),
                         _buildRow("Bulog (TPP)", tpp!.bulog),
+
+                        if (potonganTpp != null) ...[
+                          const SizedBox(height: 16),
+                          _buildRowHeader("Potongan Pihak Ke-3"),
+                          _buildRow("Bank BJB", potonganTpp!.bjb),
+                          _buildRow("Gotroy", potonganTpp!.gotroy),
+                          _buildRow("BPR Otista", potonganTpp!.bprOtista),
+                          _buildRow("BPR Pasar", potonganTpp!.bprPasar),
+                          _buildRow("Bendahara", potonganTpp!.bendahara),
+                        ],
+
                         _buildDivider(),
-                        _buildRow("Jumlah Potongan", potTpp, isBold: true, valueColor: AppColors.warning),
+                        _buildRow("Jumlah Potongan TPP", totalPotTpp, isBold: true, valueColor: AppColors.warning),
 
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
-                          child: _buildRow("TPP Bersih", netTpp, isBold: true, valueColor: AppColors.secondary),
+                          child: _buildRow("TPP Bersih", thpTpp, isBold: true, valueColor: AppColors.secondary),
                         )
                       ],
                     ),
@@ -334,11 +389,7 @@ class HistoryDetailSheet extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           title.toUpperCase(), 
-          style: TextStyle(
-            fontSize: 12, 
-            fontWeight: FontWeight.bold, 
-            color: Colors.black54,
-          ),
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
         ),
       ),
     );

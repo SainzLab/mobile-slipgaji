@@ -1,11 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_colors.dart';
-import '../data/salary_data.dart';
 import '../screens/login_page.dart';
 import '../screens/change_password_page.dart';
 
-class SettingsTab extends StatelessWidget {
+class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
+
+  @override
+  State<SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<SettingsTab> {
+  String _nama = "-";
+  String _nip = "-";
+  String _inisial = "U";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _nip = prefs.getString('nip') ?? "-";
+      _nama = prefs.getString('nama_pegawai') ?? prefs.getString('nama') ?? "User Pegawai";
+      _inisial = _getInitials(_nama);
+    });
+  }
+
+  String _getInitials(String name) {
+    if (name == "-" || name.isEmpty) return "U";
+    List<String> words = name.trim().split(' ');
+    if (words.length > 1) {
+      return "${words[0][0]}${words[1][0]}".toUpperCase();
+    } else if (words.isNotEmpty && words[0].isNotEmpty) {
+      return words[0][0].toUpperCase();
+    }
+    return "U";
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); 
+
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false, 
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,14 +62,14 @@ class SettingsTab extends StatelessWidget {
       body: Column(
         children: [
           const SizedBox(height: 20),
-          const CircleAvatar(
+          CircleAvatar(
             radius: 40,
             backgroundColor: AppColors.primary,
-            child: Text("FM", style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(_inisial, style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 12),
-          Text(SalaryData.data['pegawai']['nama'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-          Text(SalaryData.data['pegawai']['nip'], style: const TextStyle(color: Colors.grey)),
+          Text(_nama, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+          Text(_nip, style: const TextStyle(color: Colors.grey)),
           
           const SizedBox(height: 32),
           
@@ -37,7 +85,7 @@ class SettingsTab extends StatelessWidget {
           }),
           
           _buildMenuTile(context, "Keluar", Icons.logout, () {
-             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
+             _logout();
           }, isDanger: true),
         ],
       ),
