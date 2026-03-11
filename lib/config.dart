@@ -1,5 +1,5 @@
 class Config {
-  static const String baseUrl = "";
+  static const String baseUrl = "https://sigaji.sainzcloud.my.id/api";
   static const String loginUrl = "$baseUrl/login";
   static const String profileUrl = "$baseUrl/profile";
   static const String gajiUrl = "$baseUrl/gaji";

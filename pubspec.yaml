@@ -99,4 +99,4 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/walletbg.png"
+  image_path: "assets/wallet2.png"
