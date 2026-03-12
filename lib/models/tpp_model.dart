@@ -19,7 +19,7 @@ class Tpp {
   final int zakat;              // Tambahan
   final int bulog;              // Tambahan
   
-  final int jumlahKotor;        // jumlah_tpp
+  final int jumlahKotor;        
   final int jumlahPotongan;
   final int jumlahDiterima;
 
