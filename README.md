@@ -1,5 +1,3 @@
-![Capstone Project Glitch](./glitch.svg)
-
 # mobile_slipgaji
 
 A new Flutter project.
