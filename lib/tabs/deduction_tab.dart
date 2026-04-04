@@ -26,6 +26,24 @@ class _DeductionTabState extends State<DeductionTab> {
     _fetchDeductionsData();
   }
 
+  String _getNamaBulanIndonesia(String monthCode) {
+    const months = {
+      '1': 'Januari', '01': 'Januari',
+      '2': 'Februari', '02': 'Februari',
+      '3': 'Maret', '03': 'Maret',
+      '4': 'April', '04': 'April',
+      '5': 'Mei', '05': 'Mei',
+      '6': 'Juni', '06': 'Juni',
+      '7': 'Juli', '07': 'Juli',
+      '8': 'Agustus', '08': 'Agustus',
+      '9': 'September', '09': 'September',
+      '10': 'Oktober',
+      '11': 'November',
+      '12': 'Desember'
+    };
+    return months[monthCode.toString().trim()] ?? monthCode;
+  }
+
   Future<void> _fetchDeductionsData() async {
     if (!mounted) return;
     setState(() {
@@ -52,7 +70,9 @@ class _DeductionTabState extends State<DeductionTab> {
         final potGaji = (i < listPotGaji.length) ? listPotGaji[i] : null;
         final potTpp = (i < listPotTpp.length) ? listPotTpp[i] : null;
 
-        String namaBulan = potGaji?.bulan ?? potTpp?.bulan ?? "-";
+        String rawBulan = potGaji?.bulan ?? potTpp?.bulan ?? "-";
+        String namaBulan = _getNamaBulanIndonesia(rawBulan);
+        
         String tahun = potGaji?.tahun ?? potTpp?.tahun ?? "";
         String monthName = "$namaBulan $tahun".trim();
 

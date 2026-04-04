@@ -29,6 +29,24 @@ class _HistoryTabState extends State<HistoryTab> {
     _fetchHistoryData();
   }
 
+  String _getNamaBulanIndonesia(String monthCode) {
+    const months = {
+      '1': 'Januari', '01': 'Januari',
+      '2': 'Februari', '02': 'Februari',
+      '3': 'Maret', '03': 'Maret',
+      '4': 'April', '04': 'April',
+      '5': 'Mei', '05': 'Mei',
+      '6': 'Juni', '06': 'Juni',
+      '7': 'Juli', '07': 'Juli',
+      '8': 'Agustus', '08': 'Agustus',
+      '9': 'September', '09': 'September',
+      '10': 'Oktober',
+      '11': 'November',
+      '12': 'Desember'
+    };
+    return months[monthCode.toString().trim()] ?? monthCode;
+  }
+
   Future<void> _fetchHistoryData() async {
     if (!mounted) return;
     
@@ -66,9 +84,16 @@ class _HistoryTabState extends State<HistoryTab> {
         final int thpTpp = potTpp != null ? potTpp.sisaTpp : (tpp?.jumlahDiterima ?? 0);
         final int totalThp = thpGaji + thpTpp;
 
-        String namaBulan = potGaji?.bulan ?? potTpp?.bulan ?? "Bulan Tidak Diketahui";
+        String rawBulan = potGaji?.bulan ?? potTpp?.bulan ?? "-";
+        String namaBulan = _getNamaBulanIndonesia(rawBulan); 
+        
         String tahun = potGaji?.tahun ?? potTpp?.tahun ?? "";
         String monthName = "$namaBulan $tahun".trim();
+
+        if (monthName == "-") {
+          DateTime fallbackDate = DateTime(DateTime.now().year, DateTime.now().month - i, 1);
+          monthName = DateFormat('MMMM yyyy', 'id_ID').format(fallbackDate);
+        }
 
         tempHistory.add({
           'month': monthName, 
