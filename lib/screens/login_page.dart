@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import 'main_screen.dart';
-import 'forgot_password_page.dart';
 import '../services/api_service.dart'; 
 
 class LoginPage extends StatefulWidget {
@@ -74,6 +73,34 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
         );
       }
     }
+  }
+
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.info_outline_rounded, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text("Lupa Password?"),
+            ],
+          ),
+          content: const Text(
+            "Untuk menjaga keamanan akun, silakan hubungi Administrator untuk melakukan reset password Anda.",
+            style: TextStyle(height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Tutup Paham", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -205,12 +232,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
-                              );
-                            },
+                            onPressed: _showForgotPasswordDialog,
                             child: const Text("Lupa Password?", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                           ),
                         ),
