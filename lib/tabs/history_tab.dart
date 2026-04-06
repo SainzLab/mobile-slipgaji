@@ -80,8 +80,63 @@ class _HistoryTabState extends State<HistoryTab> {
         final potGaji = (i < listPotGaji.length) ? listPotGaji[i] : null; 
         final potTpp = (i < listPotTpp.length) ? listPotTpp[i] : null;   
 
-        final int thpGaji = potGaji != null ? potGaji.jumlahYgDiterima : gaji.jumlahDiterima;
-        final int thpTpp = potTpp != null ? potTpp.sisaTpp : (tpp?.jumlahDiterima ?? 0);
+        final int gajiIncome = (gaji.gajiPokok) +
+            (gaji.tunjKeluarga) +
+            (gaji.tunjJabatan) +
+            (gaji.tunjFungsional) +
+            (gaji.tunjFungsionalUmum) +
+            (gaji.tunjBeras) +
+            (gaji.tunjKhusus) +
+            (gaji.tunjPajak) +
+            (gaji.pembulatan) +
+            (gaji.iuranBpjs) +
+            (gaji.iuranJkk) +
+            (gaji.iuranJkm);
+            
+        final int potGajiAwal = (gaji.potonganIwp) +
+            (gaji.potonganPph) +
+            (gaji.iuranBpjs) +
+            (gaji.tunjJht) +
+            (gaji.iuranJkk) +
+            (gaji.iuranJkm) +
+            (gaji.iuranSimpanan) +
+            (gaji.iuranPensiun) +
+            (gaji.zakat) +
+            (gaji.bulog);
+
+        final int potGajiPihak3 = (potGaji?.koperasi ?? 0) +
+            (potGaji?.korpri ?? 0) +
+            (potGaji?.dharmaWanita ?? 0) +
+            (potGaji?.bjb ?? 0) +
+            (potGaji?.bjbs ?? 0) +
+            (potGaji?.zakatFitrahInfak ?? 0) +
+            (potGaji?.zakatProfesi ?? 0);
+            
+        final int thpGaji = gajiIncome - (potGajiAwal + potGajiPihak3);
+
+        final int tppIncome = (tpp?.bebanKerja ?? 0) +
+            (tpp?.prestasiKerja ?? 0) +
+            (tpp?.kondisiKerja ?? 0) +
+            (tpp?.kelangkaanProfesi ?? 0) +
+            (tpp?.tempatBertugas ?? 0) +
+            (tpp?.tunjanganJabatan ?? 0);
+
+        final int potTppAwal = (tpp?.potonganPph ?? 0) +
+            (tpp?.potonganIwp ?? 0) +
+            (tpp?.iuranBpjs ?? 0) + 
+            (tpp?.iuranSimpanan ?? 0) +
+            (tpp?.iuranPensiun ?? 0) +
+            (tpp?.zakat ?? 0) +
+            (tpp?.bulog ?? 0);
+
+        final int potTppPihak3 = (potTpp?.bjb ?? 0) +
+            (potTpp?.gotroy ?? 0) +
+            (potTpp?.bprOtista ?? 0) +
+            (potTpp?.bprPasar ?? 0) +
+            (potTpp?.bendahara ?? 0);
+            
+        final int thpTpp = tppIncome - (potTppAwal + potTppPihak3);
+
         final int totalThp = thpGaji + thpTpp;
 
         String rawBulan = potGaji?.bulan ?? potTpp?.bulan ?? "-";
