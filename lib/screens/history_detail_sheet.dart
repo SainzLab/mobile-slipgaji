@@ -70,7 +70,7 @@ class HistoryDetailSheet extends StatelessWidget {
 
     final int potTppAwal = (tpp?.potonganPph ?? 0) +
         (tpp?.potonganIwp ?? 0) +
-        (tpp?.iuranBpjs ?? 0) + 
+        // (tpp?.iuranBpjs ?? 0) + 
         (tpp?.iuranSimpanan ?? 0) +
         (tpp?.iuranPensiun ?? 0) +
         (tpp?.zakat ?? 0) +
@@ -374,7 +374,7 @@ class HistoryDetailSheet extends StatelessWidget {
                         _buildRow("Kelangkaan Profesi", tpp!.kelangkaanProfesi),
                         _buildRow("Tempat Bertugas", tpp!.tempatBertugas),
                         _buildRow("Tunj. Jabatan (TPP)", tpp!.tunjanganJabatan),
-                        
+
                         _buildDivider(),
                         _buildRow("Jumlah Kotor", tppIncome, isBold: true),
 
