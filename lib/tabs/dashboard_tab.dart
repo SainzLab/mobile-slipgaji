@@ -217,16 +217,67 @@ class _DashboardTabState extends State<DashboardTab> {
     final PotonganTpp? potonganTpp = currentData['potongan_tpp'];
     final PotonganGaji? potonganGaji = currentData['potongan_gaji'];
 
-    final int thpGaji = potonganGaji != null ? potonganGaji.jumlahYgDiterima : (gaji?.jumlahDiterima ?? 0);
-    final int thpTpp = potonganTpp != null ? potonganTpp.sisaTpp : (tpp?.jumlahDiterima ?? 0); 
+    final int gajiIncome = (gaji?.gajiPokok ?? 0) +
+        (gaji?.tunjKeluarga ?? 0) +
+        (gaji?.tunjJabatan ?? 0) +
+        (gaji?.tunjFungsional ?? 0) +
+        (gaji?.tunjFungsionalUmum ?? 0) +
+        (gaji?.tunjBeras ?? 0) +
+        (gaji?.tunjKhusus ?? 0) +
+        (gaji?.tunjPajak ?? 0) +
+        (gaji?.pembulatan ?? 0) +
+        (gaji?.iuranBpjs ?? 0) +
+        (gaji?.iuranJkk ?? 0) +
+        (gaji?.iuranJkm ?? 0);
+        
+    final int potGajiAwal = (gaji?.potonganIwp ?? 0) +
+        (gaji?.potonganPph ?? 0) +
+        (gaji?.iuranBpjs ?? 0) +
+        (gaji?.tunjJht ?? 0) +
+        (gaji?.iuranJkk ?? 0) +
+        (gaji?.iuranJkm ?? 0) +
+        (gaji?.iuranSimpanan ?? 0) +
+        (gaji?.iuranPensiun ?? 0) +
+        (gaji?.zakat ?? 0) +
+        (gaji?.bulog ?? 0);
+
+    final int potGajiPihak3 = (potonganGaji?.koperasi ?? 0) +
+        (potonganGaji?.korpri ?? 0) +
+        (potonganGaji?.dharmaWanita ?? 0) +
+        (potonganGaji?.bjb ?? 0) +
+        (potonganGaji?.bjbs ?? 0) +
+        (potonganGaji?.zakatFitrahInfak ?? 0) +
+        (potonganGaji?.zakatProfesi ?? 0);
+        
+    final int totalPotGaji = potGajiAwal + potGajiPihak3;
+    final int thpGaji = gajiIncome - totalPotGaji;
+
+    final int tppIncome = (tpp?.bebanKerja ?? 0) +
+        (tpp?.prestasiKerja ?? 0) +
+        (tpp?.kondisiKerja ?? 0) +
+        (tpp?.kelangkaanProfesi ?? 0) +
+        (tpp?.tempatBertugas ?? 0) +
+        (tpp?.tunjanganJabatan ?? 0);
+
+    final int potTppAwal = (tpp?.potonganPph ?? 0) +
+        (tpp?.potonganIwp ?? 0) +
+        (tpp?.iuranBpjs ?? 0) + 
+        (tpp?.iuranSimpanan ?? 0) +
+        (tpp?.iuranPensiun ?? 0) +
+        (tpp?.zakat ?? 0) +
+        (tpp?.bulog ?? 0);
+
+    final int potTppPihak3 = (potonganTpp?.bjb ?? 0) +
+        (potonganTpp?.gotroy ?? 0) +
+        (potonganTpp?.bprOtista ?? 0) +
+        (potonganTpp?.bprPasar ?? 0) +
+        (potonganTpp?.bendahara ?? 0);
+        
+    final int totalPotTpp = potTppAwal + potTppPihak3;
+    final int thpTpp = tppIncome - totalPotTpp;
+
     final int totalThp = thpGaji + thpTpp;
-    
-    final int potGajiAwal = gaji?.jumlahPotongan ?? 0;
-    final int potGajiPihakKetiga = potonganGaji?.jumlahPotongan ?? 0;
-    final int potTppAwal = tpp?.jumlahPotongan ?? 0;
-    final int potTppPihakKetiga = potonganTpp?.jumlahPotongan ?? 0;
-    
-    final int totalPotongan = potGajiAwal + potGajiPihakKetiga + potTppAwal + potTppPihakKetiga;
+    final int totalPotongan = totalPotGaji + totalPotTpp;
 
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -331,9 +382,9 @@ class _DashboardTabState extends State<DashboardTab> {
 
                 Row(
                   children: [
-                    Expanded(child: _buildStatCard("Gaji Kotor", gaji?.jumlahKotor ?? 0, AppColors.primary, Icons.monetization_on)),
+                    Expanded(child: _buildStatCard("Gaji Kotor", gajiIncome, AppColors.primary, Icons.monetization_on)),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildStatCard("TPP Kotor", tpp?.jumlahKotor ?? 0, AppColors.secondary, Icons.trending_up)),
+                    Expanded(child: _buildStatCard("TPP Kotor", tppIncome, AppColors.secondary, Icons.trending_up)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -345,7 +396,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
                 if (gaji != null) 
                 _buildExpandableSection(
-                  title: "Rincian Gaji (Pendapatan)",
+                  title: "Rincian Gaji",
                   color: AppColors.primary,
                   items: {
                     "Gaji Pokok": gaji.gajiPokok,
@@ -360,14 +411,13 @@ class _DashboardTabState extends State<DashboardTab> {
                     "Tunj. BPJS": gaji.iuranBpjs,
                     "Tunj. JKK": gaji.iuranJkk,
                     "Tunj. JKM": gaji.iuranJkm,
-                    "Tunj. JHT": gaji.tunjJht,
                   },
                 ),
                 const SizedBox(height: 12),
 
                 if (tpp != null)
                 _buildExpandableSection(
-                  title: "Rincian TPP (Pendapatan)",
+                  title: "Rincian TPP",
                   color: AppColors.secondary,
                   items: {
                     "Beban Kerja": tpp.bebanKerja,
@@ -375,19 +425,22 @@ class _DashboardTabState extends State<DashboardTab> {
                     "Kondisi Kerja": tpp.kondisiKerja,
                     "Kelangkaan Profesi": tpp.kelangkaanProfesi,
                     "Tempat Bertugas": tpp.tempatBertugas,
-                    "Tunj. BPJS Kesehatan": tpp.iuranBpjs,
+                    "Tunj. Jabatan (TPP)": tpp.tunjanganJabatan,
                   },
                 ),
                 const SizedBox(height: 12),
 
                 if (gaji != null)
                 _buildExpandableSection(
-                  title: "Potongan Gaji (SIPD)",
+                  title: "Potongan Gaji",
                   color: AppColors.danger,
                   items: {
                     "IWP (10%)": gaji.potonganIwp,
                     "PPh 21": gaji.potonganPph,
                     "BPJS Kesehatan": gaji.iuranBpjs, 
+                    "Tunj. JHT": gaji.tunjJht,
+                    "Tunj. JKK": gaji.iuranJkk,
+                    "Tunj. JKM": gaji.iuranJkm,
                     "Iuran Pensiun": gaji.iuranPensiun,
                     "Simpanan": gaji.iuranSimpanan,
                     "Zakat": gaji.zakat,
@@ -398,7 +451,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
                 if (tpp != null)
                 _buildExpandableSection(
-                  title: "Potongan TPP (SIPD)",
+                  title: "Potongan TPP",
                   color: AppColors.warning,
                   items: {
                     "PPh 21 (TPP)": tpp.potonganPph,
@@ -414,7 +467,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
                 if (potonganGaji != null)
                 _buildExpandableSection(
-                  title: "Pot. Pihak ke-3 (Gaji)",
+                  title: "Pot. Pihak ke-3 Gaji",
                   color: Colors.redAccent.shade400,
                   items: {
                     "Koperasi": potonganGaji.koperasi,
@@ -430,7 +483,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
                 if (potonganTpp != null)
                 _buildExpandableSection(
-                  title: "Pot. Pihak ke-3 (TPP)",
+                  title: "Pot. Pihak ke-3 TPP",
                   color: Colors.purple.shade400,
                   items: {
                     "Bank BJB": potonganTpp.bjb,
@@ -499,6 +552,8 @@ class _DashboardTabState extends State<DashboardTab> {
 
   Widget _buildExpandableSection({required String title, required Color color, required Map<String, int> items}) {
     final itemList = items.entries.toList();
+    
+    final int totalAmount = items.values.fold(0, (sum, item) => sum + item);
 
     return Card(
       elevation: 0,
@@ -518,26 +573,47 @@ class _DashboardTabState extends State<DashboardTab> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
-              children: itemList.map((e) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
+              children: [
+                ...itemList.map((e) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        e.key, 
+                        style: TextStyle(fontSize: 13, color: e.value > 0 ? Colors.grey.shade700 : Colors.grey.shade400)
+                      ),
+                      Text(
+                        formatRupiah(e.value), 
+                        style: TextStyle(
+                          fontSize: 13, 
+                          fontWeight: FontWeight.w500,
+                          color: e.value > 0 ? AppColors.dark : Colors.grey.shade400
+                        )
+                      ),
+                    ],
+                  ),
+                )),
+                
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1, color: Colors.grey.shade200),
+                ),
+                
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      e.key, 
-                      style: TextStyle(fontSize: 13, color: e.value > 0 ? Colors.grey.shade700 : Colors.grey.shade400)
+                    const Text(
+                      "Total", 
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.dark)
                     ),
                     Text(
-                      formatRupiah(e.value), 
-                      style: TextStyle(
-                        fontSize: 13, 
-                        fontWeight: FontWeight.w500,
-                        color: e.value > 0 ? AppColors.dark : Colors.grey.shade400
-                      )
+                      formatRupiah(totalAmount), 
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)
                     ),
                   ],
                 ),
-              )).toList(),
+              ],
             ),
           )
         ],

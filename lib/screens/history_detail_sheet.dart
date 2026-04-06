@@ -26,20 +26,66 @@ class HistoryDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int thpGaji = potonganGaji != null ? potonganGaji!.jumlahYgDiterima : (gaji?.jumlahDiterima ?? 0);
-    final int thpTpp = potonganTpp != null ? potonganTpp!.sisaTpp : (tpp?.jumlahDiterima ?? 0);
-    final int thpFinal = thpGaji + thpTpp;
-    
-    final int gajiIncome = gaji?.jumlahKotor ?? 0;
-    final int tppIncome = tpp?.jumlahKotor ?? 0;
+    final int gajiIncome = (gaji?.gajiPokok ?? 0) +
+        (gaji?.tunjKeluarga ?? 0) +
+        (gaji?.tunjJabatan ?? 0) +
+        (gaji?.tunjFungsional ?? 0) +
+        (gaji?.tunjFungsionalUmum ?? 0) +
+        (gaji?.tunjBeras ?? 0) +
+        (gaji?.tunjKhusus ?? 0) +
+        (gaji?.tunjPajak ?? 0) +
+        (gaji?.pembulatan ?? 0) +
+        (gaji?.iuranBpjs ?? 0) +
+        (gaji?.iuranJkk ?? 0) +
+        (gaji?.iuranJkm ?? 0);
+        
+    final int potGajiAwal = (gaji?.potonganIwp ?? 0) +
+        (gaji?.potonganPph ?? 0) +
+        (gaji?.iuranBpjs ?? 0) +
+        (gaji?.tunjJht ?? 0) +
+        (gaji?.iuranJkk ?? 0) +
+        (gaji?.iuranJkm ?? 0) +
+        (gaji?.iuranSimpanan ?? 0) +
+        (gaji?.iuranPensiun ?? 0) +
+        (gaji?.zakat ?? 0) +
+        (gaji?.bulog ?? 0);
 
-    final int potGajiAwal = gaji?.jumlahPotongan ?? 0;
-    final int potGajiPihak3 = potonganGaji?.jumlahPotongan ?? 0;
+    final int potGajiPihak3 = (potonganGaji?.koperasi ?? 0) +
+        (potonganGaji?.korpri ?? 0) +
+        (potonganGaji?.dharmaWanita ?? 0) +
+        (potonganGaji?.bjb ?? 0) +
+        (potonganGaji?.bjbs ?? 0) +
+        (potonganGaji?.zakatFitrahInfak ?? 0) +
+        (potonganGaji?.zakatProfesi ?? 0);
+        
     final int totalPotGaji = potGajiAwal + potGajiPihak3;
+    final int thpGaji = gajiIncome - totalPotGaji;
 
-    final int potTppAwal = tpp?.jumlahPotongan ?? 0;
-    final int potTppPihak3 = potonganTpp?.jumlahPotongan ?? 0;
+    final int tppIncome = (tpp?.bebanKerja ?? 0) +
+        (tpp?.prestasiKerja ?? 0) +
+        (tpp?.kondisiKerja ?? 0) +
+        (tpp?.kelangkaanProfesi ?? 0) +
+        (tpp?.tempatBertugas ?? 0) +
+        (tpp?.tunjanganJabatan ?? 0);
+
+    final int potTppAwal = (tpp?.potonganPph ?? 0) +
+        (tpp?.potonganIwp ?? 0) +
+        (tpp?.iuranBpjs ?? 0) + 
+        (tpp?.iuranSimpanan ?? 0) +
+        (tpp?.iuranPensiun ?? 0) +
+        (tpp?.zakat ?? 0) +
+        (tpp?.bulog ?? 0);
+
+    final int potTppPihak3 = (potonganTpp?.bjb ?? 0) +
+        (potonganTpp?.gotroy ?? 0) +
+        (potonganTpp?.bprOtista ?? 0) +
+        (potonganTpp?.bprPasar ?? 0) +
+        (potonganTpp?.bendahara ?? 0);
+        
     final int totalPotTpp = potTppAwal + potTppPihak3;
+    final int thpTpp = tppIncome - totalPotTpp;
+
+    final int thpFinal = thpGaji + thpTpp;
 
     Future<void> generatePdf() async {
       final pdf = pw.Document();
@@ -87,7 +133,6 @@ class HistoryDetailSheet extends StatelessWidget {
                   buildPdfRow("Tunj. BPJS", gaji!.iuranBpjs),
                   buildPdfRow("Tunj. JKK", gaji!.iuranJkk),
                   buildPdfRow("Tunj. JKM", gaji!.iuranJkm),
-                  buildPdfRow("Tunj. JHT", gaji!.tunjJht),
                   pw.Divider(thickness: 0.5),
                   buildPdfRow("TOTAL GAJI KOTOR", gajiIncome, isBold: true),
                   
@@ -97,6 +142,9 @@ class HistoryDetailSheet extends StatelessWidget {
                   buildPdfRow("Potongan IWP", gaji!.potonganIwp),
                   buildPdfRow("Potongan PPh", gaji!.potonganPph),
                   buildPdfRow("BPJS Kesehatan", gaji!.iuranBpjs),
+                  buildPdfRow("Tunj. JHT", gaji!.tunjJht),
+                  buildPdfRow("Tunj. JKK", gaji!.iuranJkk),
+                  buildPdfRow("Tunj. JKM", gaji!.iuranJkm),
                   buildPdfRow("Simpanan", gaji!.iuranSimpanan),
                   buildPdfRow("Pensiun", gaji!.iuranPensiun),
                   buildPdfRow("Zakat", gaji!.zakat),
@@ -135,7 +183,7 @@ class HistoryDetailSheet extends StatelessWidget {
                   buildPdfRow("Kelangkaan Profesi", tpp!.kelangkaanProfesi),
                   buildPdfRow("Tempat Bertugas", tpp!.tempatBertugas),
                   buildPdfRow("Tunj. Jabatan (TPP)", tpp!.tunjanganJabatan),
-                  buildPdfRow("Tunj. BPJS (TPP)", tpp!.iuranBpjs),
+                  
                   pw.Divider(thickness: 0.5),
                   buildPdfRow("TOTAL TPP KOTOR", tppIncome, isBold: true),
                   
@@ -264,20 +312,21 @@ class HistoryDetailSheet extends StatelessWidget {
                         _buildRow("Tunj. Khusus", gaji!.tunjKhusus),
                         _buildRow("Tunj. Pajak", gaji!.tunjPajak),
                         _buildRow("Pembulatan", gaji!.pembulatan),
-                        _buildDivider(),
                         _buildRow("Tunj. BPJS", gaji!.iuranBpjs),
                         _buildRow("Tunj. JKK", gaji!.iuranJkk),
                         _buildRow("Tunj. JKM", gaji!.iuranJkm),
-                        _buildRow("Tunj. JHT", gaji!.tunjJht),
                         _buildDivider(),
                         _buildRow("Jumlah Kotor", gajiIncome, isBold: true),
                         
                         const SizedBox(height: 16),
                         
                         _buildRowHeader("Potongan SIPD"),
-                        _buildRow("Potongan IWP (10%)", gaji!.potonganIwp),
+                        _buildRow("Potongan IWP (1%)", gaji!.potonganIwp),
                         _buildRow("Potongan PPh", gaji!.potonganPph),
                         _buildRow("BPJS Kesehatan", gaji!.iuranBpjs),
+                        _buildRow("Tunj. JHT", gaji!.tunjJht),
+                        _buildRow("Tunj. JKK", gaji!.iuranJkk),
+                        _buildRow("Tunj. JKM", gaji!.iuranJkm),
                         _buildRow("Simpanan", gaji!.iuranSimpanan),
                         _buildRow("Pensiun", gaji!.iuranPensiun),
                         _buildRow("Zakat", gaji!.zakat),
@@ -325,7 +374,7 @@ class HistoryDetailSheet extends StatelessWidget {
                         _buildRow("Kelangkaan Profesi", tpp!.kelangkaanProfesi),
                         _buildRow("Tempat Bertugas", tpp!.tempatBertugas),
                         _buildRow("Tunj. Jabatan (TPP)", tpp!.tunjanganJabatan),
-                        _buildRow("Tunj. BPJS (TPP)", tpp!.iuranBpjs),
+                        
                         _buildDivider(),
                         _buildRow("Jumlah Kotor", tppIncome, isBold: true),
 
